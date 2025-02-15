@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "voice-assistant"
+version = "0.1.0"
+description = "MI LITTLE FRIEND"
+
+packages = [
+    { include = "assistant" }
+]
+
+[tool.poetry.dependencies]
+numpy = "^1.26.4"
+ru-core-news-sm = {url = "https://github.com/explosion/spacy-models/releases/download/ru_core_news_sm-3.5.0/ru_core_news_sm-3.5.0.tar.gz"}
+python = "^3.9"
+speechrecognition = "^3.8.1"
+vosk = "^0.3.45"
+spacy = "^3.5.0"
+scikit-learn = "^1.6.1"
+pyttsx3 = "^2.90"
+aiohttp = "^3.8.4"
+python-dotenv = "^1.0.0"
+pydantic = "^1.10.5"
+PyYAML = "^6.0"
+PyAudio = "^0.2.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

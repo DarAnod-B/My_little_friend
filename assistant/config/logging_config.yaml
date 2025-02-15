@@ -1,0 +1,30 @@
+version: 1
+formatters:
+  simple:
+    format: "%(asctime)s - %(levelname)s - %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: simple
+    filename: ./files/logs/app.log  # Основной файл логов
+    maxBytes: 2097152  # 1 MB (размер файла перед ротацией)
+    backupCount: 20  # Хранить последние 20 файлов
+    encoding: utf-8  # Кодировка файла
+
+loggers:
+  assistant:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no
+
+root:
+  level: WARNING
+  handlers: [console, file]
