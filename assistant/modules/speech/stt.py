@@ -3,8 +3,7 @@ import wave
 import re
 from assistant.utils.config import Config
 from vosk import KaldiRecognizer, Model
-from assistant.modules.nlp.lemmatizer import Lemmatizer
-from assistant.modules.nlp.intent_parser import IntentParser
+from assistant.utils.logger import logger
 
 
 class SpeechProcessor:
@@ -12,8 +11,6 @@ class SpeechProcessor:
 
     def __init__(self):
         self.model = Model(Config.VOSK_MODEL_PATH)  # Загружаем модель Vosk
-        self.lemmatizer = Lemmatizer()  # Лемматизатор для нормализации текста
-        self.intent_parser = IntentParser()  # Определение намерений
 
     def speech_to_text(self):
         """Переводит речь в текст с постобработкой."""
@@ -46,15 +43,14 @@ class SpeechProcessor:
 
         # Объединяем в строку и очищаем
         text = " ".join(result).strip()
-        text = self.clean_text(text)  # Чистим текст
-        lemmatized_text = self.lemmatizer.lemmatize(text)  # Лемматизируем
-        intent = self.intent_parser.predict_intent(lemmatized_text)  # Определяем намерение
+        text = self.clean_text(text) 
 
-        return {"text": lemmatized_text, "intent": intent}
+        logger.debug(f"Распознанный текст: {text}")
+
+        return text
 
     def clean_text(self, text):
         """Удаляет лишние символы и форматирует текст."""
         text = text.lower().strip()
-        text = re.sub(r"[^а-яa-z0-9\s]", "", text)  # Убираем знаки препинания
         text = re.sub(r"\s+", " ", text)  # Убираем лишние пробелы
         return text

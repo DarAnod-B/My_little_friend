@@ -1,25 +1,23 @@
 import importlib
 import pkgutil
-import inspect
 import os
-from assistant.commands.base import Command  # Импортируем базовый класс
+from assistant.commands.base import BaseModule
 
-def load_commands():
-    """Автоматически загружает все команды из папки `commands/` (включая подпапки)."""
-    commands = {}
-    package = "assistant.commands"  # Указываем корневой пакет
+def load_modules():
+    """Автоматически загружает модули и команды из `commands/`"""
+    modules = {}
 
-    # Получаем абсолютный путь к папке commands
+    # Получаем путь к папке `commands`
     commands_dir = os.path.dirname(__file__)
 
-    # Рекурсивно обходим все подпапки
-    for finder, module_name, ispkg in pkgutil.walk_packages([commands_dir], prefix=f"{package}."):
-        module = importlib.import_module(module_name)
+    # Перебираем все подпапки в `commands/`
+    for _, module_name, ispkg in pkgutil.iter_modules([commands_dir]):
+        if ispkg:  # Загружаем только директории (модули)
+            module_path = f"assistant.commands.{module_name}"
+            module = importlib.import_module(f"{module_path}")
+            
+            if hasattr(module, "Module"):  # Проверяем, есть ли класс Module
+                instance = module.Module()
+                modules[module_name] = instance
 
-        # Ищем классы, унаследованные от Command
-        for name, obj in inspect.getmembers(module, inspect.isclass):
-            if issubclass(obj, Command) and obj is not Command:  # Исключаем базовый класс
-                command_name = obj.name  # Получаем имя команды
-                commands[command_name] = obj()  # Создаём экземпляр
-
-    return commands
+    return modules

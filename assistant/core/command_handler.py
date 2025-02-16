@@ -1,27 +1,48 @@
-import json
-from assistant.commands import load_commands
+from assistant.commands import load_modules
 from assistant.modules.nlp.intent_parser import IntentParser
+from assistant.modules.nlp.lemmatizer import Lemmatizer
 from assistant.utils.logger import logger
+
 
 class CommandHandler:
     def __init__(self):
-        self.commands = load_commands()
+        self.modules = load_modules()
         self.intent_parser = IntentParser()
+        self.lemmatizer = Lemmatizer()  # Лемматизатор добавлен здесь
 
     async def handle(self, user_input):
-        """Определяет и выполняет команду"""
-        # 1️⃣ Проверка точного совпадения с командами
-        command = self.commands.get(user_input.lower())
-        if command:
-            logger.info(f"✅ Найдена команда: {command.name}")
-            return await command.execute() if hasattr(command, "execute") else command.execute()
+        """Обрабатывает входящую команду."""
+        # Лемматизируем текст команды
+        lemmatized_text = self.lemmatizer.lemmatize(user_input)
+        logger.debug(f"Лемматизированный текст: {lemmatized_text}")
 
-        # 2️⃣ Если нет точного совпадения – анализируем текст
-        intent = self.intent_parser.predict_intent(user_input)
-        if intent and intent in self.commands:
-            logger.info(f"🧠 Определено намерение: {intent}")
-            return await self.commands[intent].execute()
+        # Определяем намерение
+        command_name = self.intent_parser.predict_intent(lemmatized_text)
 
-        logger.warning(f"⚠️ Команда '{user_input}' не распознана.")
-        return "Извините, я не понял команду."
-    
+        if command_name:
+            logger.debug(f"Распознанная команда: {command_name}")
+
+            # Ищем команду в загруженных модулях
+            for module in self.modules.values():
+                for command in module.commands:
+                    if command.name == command_name:
+                        logger.debug(f"Найдена команда: {command.name}")
+
+                        # Если это команда активации, всегда выполняем её
+                        if command.name.startswith("activate_module_"):
+                            logger.debug("Обнаружена команда активации, выполняем без проверки состояния модуля")
+                            response = await command.execute()
+                            logger.debug(f"Результат выполнения команды: {response}")
+                            return response
+
+                        # Для остальных команд проверяем активность модуля
+                        if module.is_active:
+                            response = await command.execute()
+                            logger.debug(f"Результат выполнения команды: {response}")
+                            return response
+                        logger.warning(f"Модуль '{module.name}' неактивен.")
+                        return f"Модуль '{module.name}' неактивен."
+
+        # Если команда не найдена
+        logger.warning("⚠️ Команда не распознана")
+        return "Команда не найдена."

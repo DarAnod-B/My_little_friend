@@ -1,35 +1,35 @@
-import json
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from assistant.modules.nlp.lemmatizer import Lemmatizer  # Импортируем лемматизатор
-from assistant.utils.config import Config
+from assistant.modules.nlp.lemmatizer import Lemmatizer
+from assistant.commands import load_modules
+from assistant.utils.logger import logger
+
 
 class IntentParser:
-    def __init__(self, model_path=Config.INTENTS_PATH):
-        with open(model_path, "r", encoding="utf-8") as f:
-            self.intents = json.load(f)
+    def __init__(self):
+        self.lemmatizer = Lemmatizer()  # Лемматизатор для нормализации текста
+        self.commands = {}  # Список команд
+        self.load_commands()  # Загружаем команды
 
-        self.lemmatizer = Lemmatizer() 
-        self.vectorizer = CountVectorizer()
-        self.classifier = MultinomialNB()
-
-        self.train()
-
-    def train(self):
-        texts = []
-        labels = []
-
-        for intent, examples in self.intents.items():
-            # Лемматизируем примеры команд перед обучением
-            lemmatized_examples = [self.lemmatizer.lemmatize(text) for text in examples]
-            texts.extend(lemmatized_examples)
-            labels.extend([intent] * len(examples))
-
-        X = self.vectorizer.fit_transform(texts)
-        self.classifier.fit(X, labels)
+    def load_commands(self):
+        """Загружаем команды из модулей"""
+        modules = load_modules()  # Загружаем команды из модулей
+        for module in modules.values():
+            for command in module.commands:
+                self.commands[command.name] = command  # Сохраняем команду в словаре
 
     def predict_intent(self, text: str) -> str:
-        """Определяет намерение пользователя."""
-        text = self.lemmatizer.lemmatize(text)  # Лемматизируем ввод
-        X = self.vectorizer.transform([text])
-        return self.classifier.predict(X)[0]
+        """Определяет намерение пользователя на основе ключевых слов."""
+        text = self.lemmatizer.lemmatize(text)  # Лемматизируем текст команды
+        logger.debug(f"Лемматизированный текст: {text}")
+
+        for command_name, command in self.commands.items():
+            logger.debug(f"Проверка команды: {command_name}")
+            for alias in command.aliases:
+                alias = self.lemmatizer.lemmatize(alias)  # Лемматизируем синоним
+                logger.debug(f"Лемматизированный синоним: {alias}")
+                alias_words = alias.split()  # Разбиваем синоним на слова
+                if all(word in text for word in alias_words):  # Проверяем, есть ли все слова синонима в тексте
+                    logger.debug(f"Найдено совпадение: {command_name} (синоним: {alias})")
+                    return command_name  # Если нашли совпадение, возвращаем имя команды
+
+        logger.debug("Команда не распознана")
+        return None  # Если команда не распознана
