@@ -1,6 +1,5 @@
 import aiohttp
 import json
-import os
 from assistant.utils.config import Config
 
 class OpenRouterAI:
@@ -38,3 +37,5 @@ class OpenRouterAI:
                     except:
                         continue
                 return ''.join(full_response)
+            
+

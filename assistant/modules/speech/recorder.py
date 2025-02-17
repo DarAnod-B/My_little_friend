@@ -1,9 +1,10 @@
 import pyaudio
 import wave
-from assistant.utils.logger import logger
 import struct
 import math
 import time
+
+from assistant.utils.logger import logger
 from assistant.utils.config import Config
 
 
@@ -13,13 +14,15 @@ class Recorder:
         self.CHANNELS = 1  # Количество каналов (моно)
         self.FORMAT = pyaudio.paInt16  # Формат аудиоданных
         self.CHUNK = 1024  # Размер буфера
-        self.TIMEOUT_LENGTH = 1.5  # Время ожидания тишины
+        self.TIMEOUT_LENGTH = 1.0  # Время ожидания тишины
+        self.MAX_RECORD_LENGTH = 20 # Максимальное время произнесения команды
+        self.THRESHOLD = 70000 # Пороговое значение RMS
+        self.FILE_PATH = Config.COMMAND_FILE
+
         self.p = pyaudio.PyAudio()
         self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, 
                                   rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
-
-        # Калибруем порог
-        self.THRESHOLD = self.calibrate_threshold()
+        
 
     def _rms(self, frame):
         count = len(frame) // 2
@@ -54,7 +57,7 @@ class Recorder:
         current = start_time
         end = start_time + self.TIMEOUT_LENGTH
 
-        while current - start_time <= 5:  # Запись не дольше 5 секунд
+        while current - start_time <= self.MAX_RECORD_LENGTH:  # Запись не дольше 5 секунд
             data = self.stream.read(self.CHUNK)
             rms_value = self._rms(data)
 
@@ -69,7 +72,7 @@ class Recorder:
             if current > end:  # Если время вышло, остановить запись
                 break  
 
-        with wave.open(Config.COMMAND_FILE, "wb") as wf:
+        with wave.open(self.FILE_PATH, "wb") as wf:
             wf.setnchannels(self.CHANNELS)
             wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
             wf.setframerate(self.RATE)

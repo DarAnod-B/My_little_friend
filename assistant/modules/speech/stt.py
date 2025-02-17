@@ -4,6 +4,7 @@ import re
 from assistant.utils.config import Config
 from vosk import KaldiRecognizer, Model
 from assistant.utils.logger import logger
+from assistant.modules.speech.recorder import Recorder
 
 
 class SpeechProcessor:
@@ -11,9 +12,12 @@ class SpeechProcessor:
 
     def __init__(self):
         self.model = Model(Config.VOSK_MODEL_PATH)  # Загружаем модель Vosk
+        self.recorder = Recorder() 
 
     def speech_to_text(self):
         """Переводит речь в текст с постобработкой."""
+        self.recorder.record()
+        
         wf = wave.open(Config.COMMAND_FILE, "rb")
         rec = KaldiRecognizer(self.model, wf.getframerate())
 

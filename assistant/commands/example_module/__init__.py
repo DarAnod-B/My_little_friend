@@ -1,11 +1,11 @@
 from assistant.commands.base import BaseModule
-from assistant.commands.yandex_music.activate_module import ActivateMusicCommand
-from assistant.commands.yandex_music.stop_module import StopMusicCommand
-from assistant.commands.yandex_music.play import PlayMusicCommand
-from assistant.commands.yandex_music.next import NextTrackCommand
+from assistant.commands.example_module.activate_module import ActivateMusicCommand
+from assistant.commands.example_module.stop_module import StopMusicCommand
+from assistant.commands.example_module.play import PlayMusicCommand
+from assistant.commands.example_module.next import NextTrackCommand
 
 class Module(BaseModule):
-    name = "yandex_music"
+    name = "example_module"
     flag_default = False  # По умолчанию модуль выключен
 
     def __init__(self):
